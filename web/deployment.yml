@@ -15,7 +15,7 @@ spec:
     spec:
       initContainers:
         - name: migrate
-          image: vup4k0806/find_coffee:latest
+          image: vup4k0806/find_coffee:a6a0fb9
           command: ["python", "manage.py", "migrate"]
           envFrom:
             - configMapRef:
