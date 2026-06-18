@@ -1,5 +1,6 @@
 output "cluster_endpoint" {
   value       = local.k8s_host
+  sensitive   = true
   description = "LKE API server endpoint"
 }
 

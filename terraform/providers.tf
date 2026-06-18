@@ -3,7 +3,7 @@ terraform {
   required_providers {
     linode = {
       source  = "linode/linode"
-      version = "~> 2.0"
+      version = "~> 3.0"
     }
     helm = {
       source  = "hashicorp/helm"
@@ -17,7 +17,8 @@ terraform {
 }
 
 provider "linode" {
-  token = var.linode_token
+  token       = var.linode_token
+  api_version = "v4beta"
 }
 
 # These providers reference the LKE cluster output.
