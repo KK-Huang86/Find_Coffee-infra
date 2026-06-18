@@ -10,7 +10,7 @@ spec:
     targetRevision: HEAD
     path: .
     directory:
-      # Exclude Terraform code and this ArgoCD manifest itself
+      recurse: true
       exclude: '{terraform/**,argocd/**}'
   destination:
     server: https://kubernetes.default.svc
