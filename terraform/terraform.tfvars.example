@@ -1,0 +1,15 @@
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is gitignored - never commit it
+
+linode_token      = "your-linode-personal-access-token"
+region            = "ap-southeast"
+k8s_version       = "1.32"
+node_count        = 2
+node_type         = "g6-standard-1"
+letsencrypt_email = "vup4k0806@gmail.com"
+
+# GitHub PAT for ArgoCD to read the infra repo
+# Scope needed: repo (read) — or use a fine-grained token with Contents: Read-only
+github_token    = "github_pat_xxxxxxxxxxxxxxxxxxxx"
+github_username = "vup4k0806"
+infra_repo_url  = "https://github.com/vup4k0806/find_coffee-infra"

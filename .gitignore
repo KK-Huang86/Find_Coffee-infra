@@ -1,0 +1,18 @@
+# Kubernetes secrets - never commit
+secret.yml
+*.secret.yml
+secrets/
+
+# Terraform state & sensitive files
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/terraform.tfvars
+terraform/crash.log
+
+# Local kubeconfig
+*.kubeconfig
+kubeconfig.yaml
+
+# macOS
+.DS_Store

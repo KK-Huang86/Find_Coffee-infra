@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: find-coffee
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/vup4k0806/find_coffee-infra
+    targetRevision: HEAD
+    path: .
+    directory:
+      # Exclude Terraform code and this ArgoCD manifest itself
+      exclude: '{terraform/**,argocd/**}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: find-coffee
+  syncPolicy:
+    automated:
+      prune: true      # Remove resources deleted from repo
+      selfHeal: true   # Revert manual kubectl changes
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
