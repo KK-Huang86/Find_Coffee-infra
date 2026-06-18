@@ -24,7 +24,7 @@ spec:
                 name: find-coffee-secret
       containers:
         - name: web
-          image: vup4k0806/find_coffee:latest
+          image: vup4k0806/find_coffee:a6a0fb9
           ports:
             - containerPort: 8000
           envFrom:
