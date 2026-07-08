@@ -27,7 +27,7 @@ graph TB
     end
 
     GitHub -->|監聽 Repo 變動| ArgoCD[ArgoCD]
-    ArgoCD -->|自動同步| NS
+    ArgoCD -->|自動同步| Cluster
 
     subgraph Cluster [Linode LKE]
         subgraph NS [find-coffee namespace]
