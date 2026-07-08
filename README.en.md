@@ -26,10 +26,11 @@ graph TB
         TF --> H3[Helm: ArgoCD]
     end
 
-    GitHub -->|Watch repo for changes| ArgoCD[ArgoCD]
-    ArgoCD -->|Auto-sync| Cluster
+    GitHub -->|Watch & auto-sync| ArgoCD
 
     subgraph Cluster [Linode LKE]
+        ArgoCD[ArgoCD]
+
         subgraph NS [find-coffee namespace]
             Web[web\nDjango]
             Celery[celery\nWorker]
