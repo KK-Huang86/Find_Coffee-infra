@@ -29,7 +29,7 @@ graph TB
     GitHub -->|Watch repo for changes| ArgoCD[ArgoCD]
 
     subgraph Cluster [Linode LKE]
-        ArgoCD -->|Auto-sync manifests| NS
+        ArgoCD -->|Auto-sync| NS
 
         subgraph NS [find-coffee namespace]
             Web[web\nDjango]
