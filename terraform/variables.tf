@@ -48,5 +48,5 @@ variable "github_username" {
 variable "infra_repo_url" {
   type        = string
   description = "HTTPS URL of the infra repo that ArgoCD watches"
-  default     = "https://github.com/vup4k0806/find_coffee-infra"
+  default     = "https://github.com/KK-Huang86/Find_Coffee-infra"
 }

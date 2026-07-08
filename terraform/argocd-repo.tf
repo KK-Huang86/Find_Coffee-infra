@@ -13,9 +13,7 @@ resource "kubernetes_secret" "argocd_repo" {
   }
 
   data = {
-    type     = "git"
-    url      = var.infra_repo_url
-    username = var.github_username
-    password = var.github_token
+    type = "git"
+    url  = var.infra_repo_url
   }
 }
