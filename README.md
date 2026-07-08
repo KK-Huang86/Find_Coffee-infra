@@ -6,7 +6,7 @@
 
 ## 概述
 
-本 Repo 負責管理 `find_coffee` 應用程式的 **基礎設施即程式碼（Infrastructure as Code）**，採用 GitOps 模式運作。
+本 Repo 負責管理 [`Find_Coffee`](https://github.com/KK-Huang86/Find_Coffee) 應用程式的 **基礎設施即程式碼（Infrastructure as Code）**，採用 GitOps 模式運作。
 
 所有 K8s 資源的變更只需推送到此 Repo，ArgoCD 會自動偵測並部署至 Linode LKE 叢集。
 
@@ -27,10 +27,9 @@ graph TB
     end
 
     GitHub -->|監聽 Repo 變動| ArgoCD[ArgoCD]
+    ArgoCD -->|自動同步| NS
 
     subgraph Cluster [Linode LKE]
-        ArgoCD -->|自動同步| NS
-
         subgraph NS [find-coffee namespace]
             Web[web\nDjango]
             Celery[celery\nWorker]

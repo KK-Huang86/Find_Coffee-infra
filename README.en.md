@@ -6,7 +6,7 @@
 
 ## Overview
 
-This repository manages the **Infrastructure as Code** for the `find_coffee` application, following a GitOps workflow.
+This repository manages the **Infrastructure as Code** for the [`Find_Coffee`](https://github.com/KK-Huang86/Find_Coffee) application, following a GitOps workflow.
 
 All Kubernetes resource changes are applied by simply pushing to this repo — ArgoCD automatically detects changes and deploys to the Linode LKE cluster.
 
@@ -27,10 +27,9 @@ graph TB
     end
 
     GitHub -->|Watch repo for changes| ArgoCD[ArgoCD]
+    ArgoCD -->|Auto-sync| NS
 
     subgraph Cluster [Linode LKE]
-        ArgoCD -->|Auto-sync| NS
-
         subgraph NS [find-coffee namespace]
             Web[web\nDjango]
             Celery[celery\nWorker]
