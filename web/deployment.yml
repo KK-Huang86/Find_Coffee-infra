@@ -15,7 +15,7 @@ spec:
     spec:
       initContainers:
         - name: migrate
-          image: vup4k0806/find_coffee:6b048c6
+          image: vup4k0806/find_coffee:8a5317c
           command: ["python", "manage.py", "migrate"]
           envFrom:
             - configMapRef:
@@ -24,7 +24,7 @@ spec:
                 name: find-coffee-secret
       containers:
         - name: web
-          image: vup4k0806/find_coffee:6b048c6
+          image: vup4k0806/find_coffee:8a5317c
           ports:
             - containerPort: 8000
 

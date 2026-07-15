@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: celery
-          image: vup4k0806/find_coffee:6b048c6
+          image: vup4k0806/find_coffee:8a5317c
           command: ["uv", "run", "--no-sync", "celery", "-A", "core", "worker", "-l", "info"]
           envFrom:
             - configMapRef:
