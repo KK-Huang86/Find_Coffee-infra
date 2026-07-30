@@ -5,8 +5,10 @@ metadata:
   namespace: find-coffee
 data:
   DB_ENGINE: "django.db.backends.postgresql"
-  DB_HOST: "postgres"
+  DB_HOST: "pgbouncer"
   DB_PORT: "5432"
+  POSTGRESQL_HOST: "postgres"
+  DB_NAME: "find_coffee"
   REDIS_URL: "redis://redis:6379/0"
   CELERY_BROKER_URL: "redis://redis:6379/0"
   # 不設 production 以避免 Celery 切換到 SQS
