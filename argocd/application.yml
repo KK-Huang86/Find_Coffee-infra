@@ -11,7 +11,7 @@ spec:
     path: .
     directory:
       recurse: true
-      exclude: '{terraform/**,argocd/**}'
+      exclude: '{terraform/**,argocd/**,.agents/**,openspec/**,skills-lock.json,*.json}'
   destination:
     server: https://kubernetes.default.svc
     namespace: find-coffee
