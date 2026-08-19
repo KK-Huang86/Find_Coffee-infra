@@ -71,16 +71,24 @@
 
 ## 10. 首次上線與驗證
 
-- [ ] 10.1 Push 本次所有變更（含 0.1 的 `argocd/application.yml` 修正與 `observability/*.yml`）進 repo，確認 root ArgoCD Application 自動同步出 5 個 `Application` CRD（`syncPolicy: manual`，尚未部署 workload）
-- [ ] 10.2 手動 `kubectl apply -f observability/grafana-admin-secret.yml`
-- [ ] 10.3 依序手動 `argocd app sync`：`kube-state-metrics` → `prometheus` → `loki` → `alloy` → `grafana`
-- [ ] 10.4 驗證每個元件的 Pod 皆為 `Running`（含 Alloy DaemonSet 在 3 個 node 上都有 Pod，且 Prometheus 只有一個 server pod、沒有 alertmanager/node-exporter/pushgateway pod）
-- [ ] 10.5 驗證 Prometheus 已透過 remote_write 收到 node host metrics（確認是 host 數值而非容器自身數值）與 kube-state-metrics 資料
-- [ ] 10.6 驗證 Loki 已收到 web/celery 等 pod 的 container logs
-- [ ] 10.7 驗證 Grafana 三個 Dashboard 皆能正確顯示資料（Node 資源、K8s 應用健康、應用錯誤日誌）
-- [ ] 10.8 驗證從外部瀏覽器可透過 `https://194.195.255.69.nip.io/grafana` 存取、TLS 有效、需要登入，且頁面內部連結/靜態資源沒有導向錯誤路徑
+- [x] 10.1 Push 本次所有變更（含 0.1 的 `argocd/application.yml` 修正與 `observability/*.yml`）進 repo，確認 root ArgoCD Application 自動同步出 5 個 `Application` CRD（`syncPolicy: Manual`，狀態 `OutOfSync/Missing`，尚未部署 workload；用 `argocd app list --core` 確認，不用查 admin 密碼）
+- [x] 10.2 手動 `kubectl apply -f observability/grafana-admin.secret.yml`
+- [x] 10.3 依序手動 `argocd app sync`：`kube-state-metrics` → `prometheus` → `loki` → `alloy` → `grafana`（用 `argocd app sync <name> --core`，不需要 admin 密碼登入）
+- [x] 10.4 驗證每個元件的 Pod 皆為 `Running`（Alloy DaemonSet 在全部 5 個 node 上都有 Pod；Prometheus 只有一個 server pod，確認沒有 alertmanager/node-exporter/pushgateway/kube-state-metrics 子 pod）
+- [x] 10.5 驗證 Prometheus 已透過 remote_write 收到 node host metrics（`node_cpu_seconds_total` 40 series，帶正確 `node_name` label）與 kube-state-metrics 資料（`kube_pod_status_phase` 540 series）
+- [x] 10.6 驗證 Loki 已收到 pod 的 container logs，且帶正確的 `namespace`/`pod`/`container` label（`{namespace="find-coffee"}` 查得到 pgbouncer log）
+- [x] 10.7 用登入後的 session 直接呼叫 Grafana API 驗證：`/api/search` 找到 3 個 Dashboard（Node 資源總覽、K8s 應用健康狀態、應用錯誤日誌）、`/api/datasources` 確認 Prometheus/Loki 兩個 datasource 都在，並透過 `/api/datasources/proxy/uid/<uid>/...` 實際查到 Prometheus（40 series）與 Loki（find-coffee namespace log）資料——等同瀏覽器會看到的結果
+- [x] 10.8 驗證從外部瀏覽器可透過 `https://194.195.126.243.nip.io/grafana` 存取（**注意**：實際 LoadBalancer IP 是 `194.195.126.243`，不是規劃階段記的 `194.195.255.69`——那是 IP 換過後的舊資料，已於 9.1/8.4 一併修正）、TLS 由 Let's Encrypt 簽發且驗證通過（`SSL certificate verify ok`）、未登入打 API 回 401、登入後才能查資料、靜態資源連結正確帶 `/grafana/` 前綴
+
+### 實作中發現並修正的問題（原 tasks 沒預期到）
+
+- **Loki ring `replication_factor` 預設 3，但只跑 1 個 replica** → ring 判定「unhealthy instances 太多」，所有查詢回 500。修正：`loki.commonConfig.replication_factor: 1`
+- **Grafana 12+ 預設背景下載安裝一批內建 app plugin**，對外呼叫逾時，拖慢啟動到 liveness probe 超時、被反覆重啟殺掉 → 修正：`grafana.ini.plugins.preinstall_disabled: true`
+- **`loki.source.kubernetes` 沒有 relabel，log stream 只有 `instance`/`job`，沒有可查詢的 `namespace`/`pod`/`container` label** → 三個 Dashboard 的 LogQL 全部查不到東西。修正：加 `discovery.relabel` 把 `__meta_kubernetes_namespace` 等 meta label 轉成正式 stream label
+- **5 個新 workload + 現有 app 全部塞進小節點，`node_count` 3 仍不夠**：排程集中到單一 node、Grafana rollout 新舊 pod 並存的瞬間把該 node 記憶體壓爆，**3 個節點一度全部 `MemoryPressure: True`，正式環境的 `web` Deployment 被 OOM killer 波及降到 0/2 available（真的當機，不是模擬）**。處理：① 幫 4 個單副本元件加 soft pod anti-affinity 分散排程 ② Grafana 改 `Recreate` 部署策略避免換版瞬間雙倍記憶體 ③ 詢問後把 `node_count` 從 3 加到 5（同型號 g6-standard-1，同步改 `terraform.tfvars`，因為它會蓋掉 `variables.tf` 的預設值）④ 清理 evicted/crash 殘留 pod，`web` Deployment 手動重新排程到新 node 後恢復 2/2
+- **Ingress host 用的是規劃階段查到的舊 LoadBalancer IP**（`194.195.255.69.nip.io`），叢集在規劃與實作之間重建過，實際 IP 已變成 `194.195.126.243`（現有 `ingress.yml`/`ingress-admin.yml` 已經先改過，只有我們新加的 `grafana-ingress.yml`/`grafana-app.yml` 的 `root_url` 沒同步更新）→ cert-manager 的 HTTP-01 self-check 連不到自己的 challenge path，卡了 37 分鐘簽不出憑證。修正 host 後 20 秒內完成簽發
 
 ## 11. 切回自動同步
 
-- [ ] 11.1 將 5 個 `observability/*-app.yml` 的 `syncPolicy` 改為 `automated: {prune: true, selfHeal: true}`，比照現有 `argocd/application.yml`
-- [ ] 11.2 Push 變更，確認 ArgoCD 後續改動皆自動同步
+- [x] 11.1 將 5 個 `observability/*-app.yml` 的 `syncPolicy` 改為 `automated: {prune: true, selfHeal: true}`，比照現有 `argocd/application.yml`
+- [x] 11.2 Push 變更，`argocd app list --core` 確認全部 6 個 Application（含 root `find-coffee`）都是 `Synced / Healthy / Auto-Prune`
