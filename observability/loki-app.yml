@@ -17,6 +17,10 @@ spec:
 
         loki:
           auth_enabled: false
+          # 只有 1 個 singleBinary replica，ring 的 replication_factor 必須跟著改成 1，
+          # 否則 chart 預設值 3 會讓 ring 判定「unhealthy instances 太多」而整個回 500
+          commonConfig:
+            replication_factor: 1
           storage:
             type: filesystem
           # 用 chart 內建的 test schema（tsdb + filesystem），適合小規模、非高可用場景
