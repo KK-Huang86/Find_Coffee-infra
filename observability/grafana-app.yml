@@ -24,6 +24,10 @@ spec:
           server:
             root_url: https://194.195.255.69.nip.io/grafana/
             serve_from_sub_path: true
+          # Grafana 12+ 預設會在啟動時背景下載安裝一批內建 app plugin（grafana-lokiexplore-app 等），
+          # 對外網路呼叫常常逾時，拖慢啟動速度到 liveness probe 判定逾時、被 kubelet 反覆重啟，關掉它
+          plugins:
+            preinstall_disabled: true
 
         sidecar:
           dashboards:
