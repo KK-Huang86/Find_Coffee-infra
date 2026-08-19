@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: prometheus
+    targetRevision: 29.27.0
+    helm:
+      valuesObject:
+        # Push 模式：只開 remote-write receiver，Prometheus 不主動 scrape 任何東西
+        server:
+          extraArgs:
+            web.enable-remote-write-receiver: null
+          retention: 7d
+          persistentVolume:
+            enabled: true
+            size: 8Gi
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+        # 明確關閉 chart 內建子元件：kube-state-metrics 走獨立 Application 管理，
+        # node-exporter 由 Alloy 收 host metrics 取代，alertmanager/pushgateway 不在此次範圍內
+        alertmanager:
+          enabled: false
+        kube-state-metrics:
+          enabled: false
+        prometheus-node-exporter:
+          enabled: false
+        prometheus-pushgateway:
+          enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

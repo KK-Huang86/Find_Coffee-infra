@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: observability
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/limit-rps: "5"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - 194.195.255.69.nip.io
+      secretName: grafana-tls
+  rules:
+    - host: 194.195.255.69.nip.io
+      http:
+        paths:
+          - path: /grafana
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 80

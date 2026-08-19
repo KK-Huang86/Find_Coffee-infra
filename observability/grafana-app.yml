@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: grafana
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://grafana-community.github.io/helm-charts
+    chart: grafana
+    targetRevision: 12.11.0
+    helm:
+      valuesObject:
+        admin:
+          existingSecret: grafana-admin
+          userKey: admin-user
+          passwordKey: admin-password
+
+        # 對外走 /grafana 子路徑（見 observability/grafana-ingress.yml），
+        # 沒有這兩個設定，登入 redirect、靜態資源、Grafana Live(WebSocket) 都會導到錯誤路徑
+        grafana.ini:
+          server:
+            root_url: https://194.195.255.69.nip.io/grafana/
+            serve_from_sub_path: true
+
+        sidecar:
+          dashboards:
+            enabled: true
+            # label 用 chart 預設值 grafana_dashboard，跟 observability/grafana-dashboard-*.yml 的 label 對齊
+          datasources:
+            enabled: true
+            # label 用 chart 預設值 grafana_datasource，跟 observability/grafana-datasource-configmap.yml 對齊
+
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

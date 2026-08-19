@@ -1,0 +1,74 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: loki
+    targetRevision: 7.3.0
+    helm:
+      valuesObject:
+        deploymentMode: SingleBinary
+
+        loki:
+          auth_enabled: false
+          storage:
+            type: filesystem
+          # 用 chart 內建的 test schema（tsdb + filesystem），適合小規模、非高可用場景
+          useTestSchema: true
+          limits_config:
+            retention_period: 168h # 7 天
+          compactor:
+            working_directory: /var/loki/compactor
+            compaction_interval: 10m
+            retention_enabled: true
+            retention_delete_delay: 2h
+            retention_delete_worker_count: 50
+            delete_request_store: filesystem
+
+        # 明確關掉 chart 預設會一起裝出來的額外元件，保持單一 pod
+        gateway:
+          enabled: false
+        ruler:
+          enabled: false
+        resultsCache:
+          enabled: false
+        chunksCache:
+          enabled: false
+        minio:
+          enabled: false
+        lokiCanary:
+          enabled: false
+        test:
+          enabled: false
+
+        singleBinary:
+          replicas: 1
+          persistence:
+            enabled: true
+            size: 8Gi
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+
+        # 我們沒有跑其他 distributed 元件，強制 replicas 為 0 避免 chart 預設值殘留
+        read:
+          replicas: 0
+        write:
+          replicas: 0
+        backend:
+          replicas: 0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

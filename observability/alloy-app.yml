@@ -1,0 +1,120 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alloy
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: alloy
+    targetRevision: 1.11.1
+    helm:
+      valuesObject:
+        # controller.type 預設就是 daemonset，不用額外設定
+
+        alloy:
+          # 讓 River config 能讀到自己所在的 node 名稱，用來標記 host metrics
+          extraEnv:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          # 掛載 host 的 /proc /sys / 供 prometheus.exporter.unix 讀取真正的 host metrics
+          mounts:
+            extra:
+              - name: rootfs
+                mountPath: /host/root
+                readOnly: true
+              - name: procfs
+                mountPath: /host/proc
+                readOnly: true
+              - name: sysfs
+                mountPath: /host/sys
+                readOnly: true
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+
+          configMap:
+            create: true
+            content: |
+              // ---- Metrics: host (node) 層級 ----
+              prometheus.exporter.unix "host" {
+                procfs_path = "/host/proc"
+                sysfs_path  = "/host/sys"
+                rootfs_path = "/host/root"
+              }
+
+              prometheus.relabel "host_with_node_label" {
+                forward_to = [prometheus.remote_write.default.receiver]
+
+                rule {
+                  target_label = "node_name"
+                  replacement  = sys.env("NODE_NAME")
+                }
+              }
+
+              prometheus.scrape "host" {
+                targets         = prometheus.exporter.unix.host.targets
+                forward_to      = [prometheus.relabel.host_with_node_label.receiver]
+                scrape_interval = "30s"
+              }
+
+              // ---- Metrics: K8s 物件狀態 (kube-state-metrics) ----
+              prometheus.scrape "kube_state_metrics" {
+                targets = [
+                  {"__address__" = "kube-state-metrics.observability.svc.cluster.local:8080"},
+                ]
+                forward_to      = [prometheus.remote_write.default.receiver]
+                scrape_interval = "30s"
+              }
+
+              // ---- Metrics: push 到 Prometheus ----
+              prometheus.remote_write "default" {
+                endpoint {
+                  url = "http://prometheus-server.observability.svc.cluster.local/api/v1/write"
+                }
+              }
+
+              // ---- Logs: 透過 K8s API 收集所有 pod 的 container logs ----
+              discovery.kubernetes "pods" {
+                role = "pod"
+              }
+
+              loki.source.kubernetes "pods" {
+                targets    = discovery.kubernetes.pods.targets
+                forward_to = [loki.write.default.receiver]
+              }
+
+              loki.write "default" {
+                endpoint {
+                  url = "http://loki.observability.svc.cluster.local:3100/loki/api/v1/push"
+                }
+              }
+
+        controller:
+          volumes:
+            extra:
+              - name: rootfs
+                hostPath:
+                  path: /
+              - name: procfs
+                hostPath:
+                  path: /proc
+              - name: sysfs
+                hostPath:
+                  path: /sys
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

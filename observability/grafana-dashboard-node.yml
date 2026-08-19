@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-node
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+data:
+  node-resources.json: |
+    {
+      "title": "Node 資源總覽",
+      "uid": "node-resources",
+      "schemaVersion": 39,
+      "editable": true,
+      "timezone": "browser",
+      "time": { "from": "now-6h", "to": "now" },
+      "refresh": "1m",
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "CPU 使用率 (%)",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "100 - (avg by (node_name) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+              "legendFormat": "{{node_name}}"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "記憶體使用率 (%)",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+              "legendFormat": "{{node_name}}"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "磁碟使用率 (%)",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "(1 - (node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs\"})) * 100",
+              "legendFormat": "{{node_name}} {{mountpoint}}"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "網路流量 (bytes/s)",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "rate(node_network_receive_bytes_total{device!~\"lo|veth.*|docker.*\"}[5m])",
+              "legendFormat": "{{node_name}} rx {{device}}"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|docker.*\"}[5m])",
+              "legendFormat": "{{node_name}} tx {{device}}"
+            }
+          ]
+        }
+      ]
+    }

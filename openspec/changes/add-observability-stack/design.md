@@ -38,6 +38,8 @@ Pull 模式是多數教學文的預設路徑（`kube-prometheus-stack` + Operato
 ### 5. Loki singleBinary + filesystem PVC
 叢集規模不需要考慮 Loki 的 distributed（read/write/backend 分離）模式。物件儲存能拿到更長保留期與更高持久性，但要多開 Linode Object Storage bucket、管理 access key，屬於額外的雲端依賴，跟現階段「先讓路徑跑起來」的目標不成比例。先用 filesystem PVC，之後有需要再遷移（見 `docs/adr` 若後續建立）。
 
+實作時用 `helm template` 實際渲染確認：`grafana/loki` chart 即使選了 `SingleBinary` 模式，預設仍會一併裝出 `gateway`（nginx 反代）、`ruler`、`resultsCache`/`chunksCache`（各一個 memcached）、`lokiCanary`（每個 node 一份的自我測試 DaemonSet）——這些都不是「一個 pod 搞定」的必要部分，已在 Helm values 全部關閉，實測渲染結果確認只剩 1 個 StatefulSet。
+
 ### 6. Datasource 與 Dashboard 都用 sidecar ConfigMap 動態載入
 Grafana chart 的 sidecar container 會 watch 帶特定 label 的 ConfigMap 並自動 reload，不需要重啟 Grafana pod。Datasource 只有 2 個（Prometheus、Loki），原本考慮直接寫在 Helm values 更省事，但為了跟 Dashboard 走同一套機制、維持設定來源單一化（都是「套用一個 ConfigMap 就生效」），改用 sidecar 統一處理。
 

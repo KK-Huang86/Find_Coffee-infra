@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-k8s-health
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+data:
+  k8s-app-health.json: |
+    {
+      "title": "K8s 應用健康狀態",
+      "uid": "k8s-app-health",
+      "schemaVersion": 39,
+      "editable": true,
+      "timezone": "browser",
+      "time": { "from": "now-6h", "to": "now" },
+      "refresh": "1m",
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "Pod 重啟次數（每小時新增）",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "increase(kube_pod_container_status_restarts_total{namespace=\"find-coffee\"}[1h])",
+              "legendFormat": "{{pod}} / {{container}}"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "Deployment：期望 vs 可用 replica 數",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "kube_deployment_spec_replicas{namespace=\"find-coffee\"}",
+              "legendFormat": "{{deployment}} desired"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "kube_deployment_status_replicas_available{namespace=\"find-coffee\"}",
+              "legendFormat": "{{deployment}} available"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "StatefulSet：期望 vs Ready replica 數（postgres/redis）",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "kube_statefulset_replicas{namespace=\"find-coffee\"}",
+              "legendFormat": "{{statefulset}} desired"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "kube_statefulset_status_replicas_ready{namespace=\"find-coffee\"}",
+              "legendFormat": "{{statefulset}} ready"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "table",
+          "title": "目前非 Running 狀態的 Pod",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "kube_pod_status_phase{namespace=\"find-coffee\", phase!=\"Running\", phase!=\"Succeeded\"} == 1",
+              "format": "table",
+              "instant": true
+            }
+          ]
+        }
+      ]
+    }
