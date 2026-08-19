@@ -27,3 +27,7 @@ spec:
       kind: StatefulSet
       jsonPointers:
         - /spec/volumeClaimTemplates
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /status/terminatingReplicas
