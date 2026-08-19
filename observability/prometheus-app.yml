@@ -17,6 +17,18 @@ spec:
         server:
           extraArgs:
             web.enable-remote-write-receiver: null
+          # 跟其他 observability 元件盡量分散到不同 node，避免全部擠在同一台 2GB node
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    topologyKey: kubernetes.io/hostname
+                    labelSelector:
+                      matchExpressions:
+                        - key: app.kubernetes.io/instance
+                          operator: In
+                          values: [prometheus, loki, grafana, kube-state-metrics]
           retention: 7d
           persistentVolume:
             enabled: true
