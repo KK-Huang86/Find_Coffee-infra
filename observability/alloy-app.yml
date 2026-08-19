@@ -89,8 +89,27 @@ spec:
                 role = "pod"
               }
 
+              // discovery.kubernetes 只給 __meta_kubernetes_* 這種內部 meta label，
+              // 要手動 relabel 成 namespace/pod/container 才會變成 Loki 查得到的 stream label
+              discovery.relabel "kubernetes_pods" {
+                targets = discovery.kubernetes.pods.targets
+
+                rule {
+                  source_labels = ["__meta_kubernetes_namespace"]
+                  target_label  = "namespace"
+                }
+                rule {
+                  source_labels = ["__meta_kubernetes_pod_name"]
+                  target_label  = "pod"
+                }
+                rule {
+                  source_labels = ["__meta_kubernetes_pod_container_name"]
+                  target_label  = "container"
+                }
+              }
+
               loki.source.kubernetes "pods" {
-                targets    = discovery.kubernetes.pods.targets
+                targets    = discovery.relabel.kubernetes_pods.output
                 forward_to = [loki.write.default.receiver]
               }
 
