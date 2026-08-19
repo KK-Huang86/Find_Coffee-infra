@@ -30,6 +30,14 @@ spec:
             preinstall_disabled: true
 
         sidecar:
+          # 兩個 sidecar container 預設沒有 resource requests/limits，實測各吃到 70+Mi，
+          # 會被算成「超額」記憶體使用，node 緊繃時第一批被 evict，補上明確預算
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
           dashboards:
             enabled: true
             # label 用 chart 預設值 grafana_dashboard，跟 observability/grafana-dashboard-*.yml 的 label 對齊
