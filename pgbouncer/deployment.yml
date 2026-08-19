@@ -48,7 +48,7 @@ spec:
             - name: DEFAULT_POOL_SIZE
               value: "10"
             - name: AUTH_TYPE
-              value: md5
+              value: scram-sha-256
           readinessProbe:
             tcpSocket:
               port: 5432
