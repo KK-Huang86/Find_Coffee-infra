@@ -26,12 +26,13 @@ fi
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-# 直接從 kubectl 讀目前叢集實際的 LoadBalancer IP 當作「舊值」，
-# 這樣不用手動猜舊 IP 是多少，也比較不會抓錯字串。
-OLD_IP="$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)"
+# 舊值一定要從「檔案裡現在寫的是什麼」讀，不能從 kubectl 讀。
+# kubectl 讀到的是叢集當下的真實 IP——如果叢集已經重建過、IP 已經換了，
+# 那個值會跟你要設的新 IP 一樣，導致誤判成「不用改」，但檔案其實還是舊的。
+OLD_IP="$(grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' ingress.yml 2>/dev/null | head -1 || true)"
 
 if [[ -z "$OLD_IP" ]]; then
-  echo "抓不到目前叢集的 LoadBalancer IP (kubectl 連不到叢集，或 ingress-nginx 還沒起來)。" >&2
+  echo "在 ingress.yml 裡找不到現有的 IP。" >&2
   echo "改用手動指定舊 IP：$0 <新IP> <舊IP>" >&2
   OLD_IP="${2:-}"
   if [[ -z "$OLD_IP" ]]; then
@@ -40,8 +41,14 @@ if [[ -z "$OLD_IP" ]]; then
 fi
 
 if [[ "$OLD_IP" == "$NEW_IP" ]]; then
-  echo "舊 IP 跟新 IP 一樣 ($OLD_IP)，不用改。"
+  echo "檔案裡的 IP 跟新 IP 一樣 ($OLD_IP)，不用改。"
   exit 0
+fi
+
+# 順手提醒一下：新 IP 跟叢集目前實際的 LoadBalancer IP 對不對得起來
+LIVE_IP="$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)"
+if [[ -n "$LIVE_IP" && "$LIVE_IP" != "$NEW_IP" ]]; then
+  echo "提醒：叢集目前實際的 LoadBalancer IP 是 $LIVE_IP，跟你要設的 $NEW_IP 不一樣，確認一下是不是打錯。" >&2
 fi
 
 echo "把 $OLD_IP 換成 $NEW_IP ..."

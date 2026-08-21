@@ -22,7 +22,7 @@ spec:
         # 沒有這兩個設定，登入 redirect、靜態資源、Grafana Live(WebSocket) 都會導到錯誤路徑
         grafana.ini:
           server:
-            root_url: https://194.195.126.243.nip.io/grafana/
+            root_url: https://194.195.124.73.nip.io/grafana/
             serve_from_sub_path: true
           # Grafana 12+ 預設會在啟動時背景下載安裝一批內建 app plugin（grafana-lokiexplore-app 等），
           # 對外網路呼叫常常逾時，拖慢啟動速度到 liveness probe 判定逾時、被 kubelet 反覆重啟，關掉它

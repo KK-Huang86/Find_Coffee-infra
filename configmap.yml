@@ -14,5 +14,5 @@ data:
   # 不設 production 以避免 Celery 切換到 SQS
   ENVIRONMENT: "staging"
   AWS_REGION: "ap-northeast-1"
-  ALLOWED_HOSTS: "194.195.126.243,194.195.126.243.nip.io"
+  ALLOWED_HOSTS: "194.195.124.73,194.195.124.73.nip.io"
   DEBUG: "False"

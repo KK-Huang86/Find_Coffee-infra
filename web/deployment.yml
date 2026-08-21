@@ -34,7 +34,7 @@ spec:
               port: 8000
               httpHeaders:
                 - name: Host
-                  value: 194.195.126.243
+                  value: 194.195.124.73
             initialDelaySeconds: 15
             periodSeconds: 30
             timeoutSeconds: 3
@@ -46,7 +46,7 @@ spec:
               port: 8000
               httpHeaders:
                 - name: Host
-                  value: 194.195.126.243
+                  value: 194.195.124.73
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 3

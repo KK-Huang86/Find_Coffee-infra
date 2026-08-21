@@ -14,10 +14,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - 194.195.126.243.nip.io
+        - 194.195.124.73.nip.io
       secretName: find-coffee-tls
   rules:
-    - host: 194.195.126.243.nip.io
+    - host: 194.195.124.73.nip.io
       http:
         paths:
           - path: /
