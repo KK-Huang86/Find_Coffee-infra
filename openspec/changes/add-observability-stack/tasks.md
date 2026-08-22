@@ -90,5 +90,5 @@
 
 ## 11. 切回自動同步
 
-- [x] 11.1 將 5 個 `observability/*-app.yml` 的 `syncPolicy` 改為 `automated: {prune: true, selfHeal: true}`，比照現有 `argocd/application.yml`
-- [x] 11.2 Push 變更，`argocd app list --core` 確認全部 6 個 Application（含 root `find-coffee`）都是 `Synced / Healthy / Auto-Prune`
+- [ ] 11.1 將 5 個 `observability/*-app.yml` 的 `syncPolicy` 改為 `automated: {prune: true, selfHeal: true}`，比照現有 `argocd/application.yml`
+- [ ] 11.2 Push 變更，確認 ArgoCD 後續改動皆自動同步
